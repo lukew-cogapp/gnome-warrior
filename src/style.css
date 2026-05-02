@@ -1,8 +1,63 @@
-html, body { margin: 0; height: 100%; background: #1a1d24; }
-body { display: grid; place-items: center; font-family: system-ui, sans-serif; color: #cbd2dc; }
-main { display: grid; gap: 12px; place-items: center; padding: 20px; }
-canvas { border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); display: block; }
-h1 { font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; margin: 0; opacity: 0.7; }
-.row { display: flex; gap: 10px; }
-button { background: #2a2f3a; color: #cbd2dc; border: 1px solid #3a4150; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+:root { --bg: #1a1d24; --fg: #cbd2dc; --panel: #2a2f3a; --line: #3a4150; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); }
+body {
+  display: grid;
+  place-items: center;
+  font-family: system-ui, sans-serif;
+  color: var(--fg);
+  padding: clamp(12px, 3vw, 24px);
+}
+
+main {
+  display: grid;
+  gap: 12px;
+  place-items: center;
+  width: 100%;
+  max-width: 720px;
+}
+
+#sketch {
+  width: 100%;
+  /* Maintain canvas aspect ratio (720:800 = 9:10). */
+  aspect-ratio: 9 / 10;
+  display: flex;
+}
+
+#sketch canvas {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: block;
+}
+
+h1 {
+  font-size: clamp(11px, 2.4vw, 14px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+button {
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  min-height: 36px;
+}
 button:hover { background: #343a47; }
+button:active { transform: translateY(1px); }
+
+@media (max-width: 480px) {
+  main { gap: 8px; }
+  button { flex: 1 1 auto; }
+}
