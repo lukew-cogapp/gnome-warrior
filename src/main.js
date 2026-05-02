@@ -1,24 +1,29 @@
 import p5 from 'p5';
-import { drawScene } from './scene.js';
+import { drawScene, reseedBats } from './scene.js';
 
 const W = 720, H = 800;
 let p5Instance;
 let seed = 7;
+let frame = 0;
 
 const sketch = (p) => {
   p.setup = () => {
     const c = p.createCanvas(W, H);
     c.parent('sketch');
-    p.noLoop();
+    p.frameRate(30);
     p.randomSeed(seed);
-    drawScene(p, { W, H, seed });
+    reseedBats(W, H, seed);
+  };
+
+  p.draw = () => {
+    frame = p.frameCount;
+    p.randomSeed(seed); // keep beard tufts stable per seed
+    drawScene(p, { W, H, seed, frame });
   };
 
   p.redrawScene = (newSeed) => {
     seed = newSeed;
-    p.randomSeed(seed);
-    drawScene(p, { W, H, seed });
-    p.redraw();
+    reseedBats(W, H, seed);
   };
 };
 
@@ -31,11 +36,8 @@ document.getElementById('save').addEventListener('click', () => {
   p5Instance.saveCanvas('gnome_warrior', 'png');
 });
 
-// Vite HMR — re-import scene module and redraw
 if (import.meta.hot) {
-  import.meta.hot.accept('./scene.js', (mod) => {
-    if (!mod) return;
-    mod.drawScene(p5Instance, { W, H, seed });
-    p5Instance.redraw();
+  import.meta.hot.accept('./scene.js', () => {
+    // module reloads itself; loop picks up new draw fns next frame
   });
 }

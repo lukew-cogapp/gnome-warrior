@@ -35,9 +35,37 @@ const PALETTE = {
   crystalDark: '#2a8aa8',
 };
 
-export function drawScene(p, { W, H, seed }) {
+// Bat flock — module state, persists across frames.
+let bats = null;
+
+function initBats(W, H, seed) {
+  const r = mulberry32(seed);
+  bats = [];
+  for (let i = 0; i < 9; i++) {
+    bats.push({
+      x: r() * W,
+      y: 60 + r() * (H * 0.4),
+      vx: 0.6 + r() * 1.4,
+      vy: 0,
+      yBase: 60 + r() * (H * 0.4),
+      yAmp: 18 + r() * 26,
+      flapSpeed: 0.18 + r() * 0.18,
+      flapPhase: r() * Math.PI * 2,
+      bobPhase: r() * Math.PI * 2,
+      size: 16 + r() * 22,
+      dir: r() < 0.5 ? 1 : -1,
+    });
+  }
+}
+
+export function drawScene(p, { W, H, seed, frame = 0 }) {
+  if (!bats) initBats(W, H, seed);
+
   p.background('#1a1d24');
   drawBackdrop(p, W, H);
+
+  // bats — silhouettes drift across moon
+  drawBats(p, W, H, frame);
 
   // crystal light glow on ground (cast from mage staff)
   drawCrystalGlow(p, W, H);
@@ -57,6 +85,61 @@ export function drawScene(p, { W, H, seed }) {
   p.pop();
 
   drawVignette(p, W, H);
+}
+
+export function reseedBats(W, H, seed) {
+  initBats(W, H, seed);
+}
+
+function drawBats(p, W, H, frame) {
+  for (const b of bats) {
+    // update
+    b.x += b.vx * b.dir;
+    if (b.dir > 0 && b.x > W + 60) b.x = -60;
+    if (b.dir < 0 && b.x < -60) b.x = W + 60;
+    b.y = b.yBase + Math.sin(frame * 0.04 + b.bobPhase) * b.yAmp;
+
+    const flap = Math.sin(frame * b.flapSpeed + b.flapPhase);
+    drawBat(p, b.x, b.y, b.size, flap, b.dir);
+  }
+}
+
+function drawBat(p, x, y, size, flap, dir) {
+  // flap drives wing arc height. Silhouette only.
+  p.push();
+  p.translate(x, y);
+  p.scale(dir, 1);
+  p.noStroke();
+  p.fill(10, 10, 14, 230);
+
+  const s = size / 24; // scale factor
+  const wingY = -8 * s + flap * 6 * s;
+  const wingTipY = flap * 10 * s;
+
+  // body
+  p.ellipse(0, 0, 10 * s, 14 * s);
+  // head + ears
+  p.ellipse(0, -8 * s, 8 * s, 7 * s);
+  p.triangle(-3 * s, -11 * s, -1 * s, -14 * s, -1 * s, -10 * s);
+  p.triangle(3 * s, -11 * s, 1 * s, -14 * s, 1 * s, -10 * s);
+
+  // left wing
+  p.beginShape();
+  p.vertex(-2 * s, -2 * s);
+  p.bezierVertex(-12 * s, wingY, -22 * s, -2 * s + wingTipY, -28 * s, 4 * s + wingTipY);
+  p.bezierVertex(-22 * s, 4 * s + wingTipY * 0.5, -16 * s, 6 * s, -10 * s, 6 * s);
+  p.bezierVertex(-8 * s, 4 * s, -4 * s, 2 * s, -2 * s, 2 * s);
+  p.endShape(p.CLOSE);
+
+  // right wing
+  p.beginShape();
+  p.vertex(2 * s, -2 * s);
+  p.bezierVertex(12 * s, wingY, 22 * s, -2 * s + wingTipY, 28 * s, 4 * s + wingTipY);
+  p.bezierVertex(22 * s, 4 * s + wingTipY * 0.5, 16 * s, 6 * s, 10 * s, 6 * s);
+  p.bezierVertex(8 * s, 4 * s, 4 * s, 2 * s, 2 * s, 2 * s);
+  p.endShape(p.CLOSE);
+
+  p.pop();
 }
 
 function drawCrystalGlow(p, W, H) {
