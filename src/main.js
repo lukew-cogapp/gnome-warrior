@@ -23,7 +23,6 @@ const sketch = (p) => {
 
   p.redrawScene = (newSeed) => {
     seed = newSeed;
-    reseedBats(W, H, seed);
   };
 };
 
