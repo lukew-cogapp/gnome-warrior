@@ -1,6 +1,10 @@
 import p5 from 'p5';
-import { drawScene, reseedBats, type DayNight } from './scene';
 import { CHARACTERS } from './characters';
+import { type DayNight, drawScene, reseedFlocks } from './scene';
+
+const VALID_IDS = new Set(CHARACTERS.map((c) => c.id));
+const sanitizeId = (id: string | undefined, fallback: string): string =>
+  id && VALID_IDS.has(id) ? id : fallback;
 
 const W = 720;
 const H = 800;
@@ -30,8 +34,8 @@ function loadState(): PersistedState {
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     return {
-      leftId: parsed.leftId ?? fallback.leftId,
-      rightId: parsed.rightId ?? fallback.rightId,
+      leftId: sanitizeId(parsed.leftId, fallback.leftId),
+      rightId: sanitizeId(parsed.rightId, fallback.rightId),
       mode: parsed.mode === 'day' ? 'day' : 'night',
       seed: typeof parsed.seed === 'number' ? parsed.seed : fallback.seed,
     };
@@ -56,13 +60,14 @@ const sketch = (p: p5): void => {
     c.parent('sketch');
     p.frameRate(30);
     p.randomSeed(state.seed);
-    reseedBats(W, H, state.seed);
+    reseedFlocks(W, H, state.seed);
   };
 
   p.draw = () => {
     p.randomSeed(state.seed);
     drawScene(p, {
-      W, H,
+      W,
+      H,
       seed: state.seed,
       frame: p.frameCount,
       leftId: state.leftId,

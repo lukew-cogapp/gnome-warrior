@@ -3,7 +3,7 @@
 // Base handles seeding, palette pick, sway/headTilt, push/pop wrap.
 
 import type p5 from 'p5';
-import { mulberry32, symmetric, type Rng } from '../rng';
+import { mulberry32, type Rng, symmetric } from '../rng';
 import type { CharacterDef } from '../types';
 
 export interface DrawCtx<P> {
@@ -32,11 +32,7 @@ export interface CharacterConfig<P> {
 }
 
 export function defineCharacter<P>(config: CharacterConfig<P>): CharacterDef {
-  const {
-    id, name, seedOffset, palettes,
-    swayRange = 12, headTiltRange = 8,
-    drawBody,
-  } = config;
+  const { id, name, seedOffset, palettes, swayRange = 12, headTiltRange = 8, drawBody } = config;
 
   return {
     id,

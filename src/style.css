@@ -7,9 +7,12 @@
   --accent: #d8b14a;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   margin: 0;
   height: 100%;
   background: var(--bg);
@@ -107,8 +110,16 @@ h1 {
   min-height: 32px;
   min-width: 32px;
 }
-.slot button:hover { background: var(--panel-hi); }
-.slot button:active { transform: translateY(1px); }
+.slot button:hover {
+  background: var(--panel-hi);
+}
+.slot button:active {
+  transform: translateY(1px);
+}
+
+.slot {
+  min-width: 0;
+}
 
 .slot-name {
   text-align: center;
@@ -116,6 +127,10 @@ h1 {
   font-weight: 600;
   color: var(--accent);
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .row {
@@ -136,10 +151,18 @@ button {
   min-height: 32px;
   font-family: inherit;
 }
-button:hover { background: var(--panel-hi); }
-button:active { transform: translateY(1px); }
+button:hover {
+  background: var(--panel-hi);
+}
+button:active {
+  transform: translateY(1px);
+}
 
 @media (max-width: 480px) {
-  .row button { flex: 1 1 auto; }
-  h1 { font-size: 11px; }
+  .row button {
+    flex: 1 1 auto;
+  }
+  h1 {
+    font-size: 11px;
+  }
 }

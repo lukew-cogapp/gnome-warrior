@@ -13,6 +13,5 @@ export function mulberry32(seedInput: number): () => number {
 export type Rng = () => number;
 
 // Range helpers that take a Rng so they share the same seeded stream.
-export const range = (r: Rng, min: number, max: number): number =>
-  min + r() * (max - min);
+export const range = (r: Rng, min: number, max: number): number => min + r() * (max - min);
 export const symmetric = (r: Rng, span: number): number => (r() - 0.5) * span;

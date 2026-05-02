@@ -18,13 +18,30 @@ export interface SceneOpts {
 // Bats
 // ============================================================
 interface Bat {
-  x: number; y: number; vx: number;
-  yBase: number; yAmp: number;
-  flapSpeed: number; flapPhase: number; bobPhase: number;
-  size: number; dir: 1 | -1;
+  x: number;
+  y: number;
+  vx: number;
+  yBase: number;
+  yAmp: number;
+  flapSpeed: number;
+  flapPhase: number;
+  bobPhase: number;
+  size: number;
+  dir: 1 | -1;
 }
 
-let bats: Bat[] | null = null;
+// Survives HMR module reloads by caching on import.meta.hot.data.
+type HotCache = { bats: Bat[] | null; gulls: Gull[] | null; dragon: Dragon | null };
+const hotCache: HotCache = (import.meta.hot?.data?.['flockCache'] as HotCache | undefined) ?? {
+  bats: null,
+  gulls: null,
+  dragon: null,
+};
+if (import.meta.hot) {
+  import.meta.hot.data['flockCache'] = hotCache;
+}
+
+let bats: Bat[] | null = hotCache.bats;
 
 function initBats(W: number, H: number, seed: number): void {
   const r = mulberry32(seed);
@@ -43,6 +60,7 @@ function initBats(W: number, H: number, seed: number): void {
       dir: r() < 0.5 ? 1 : -1,
     });
   }
+  hotCache.bats = bats;
 }
 
 function drawBats(p: p5, W: number, frame: number): void {
@@ -90,25 +108,31 @@ function drawBat(p: p5, x: number, y: number, size: number, flap: number, dir: 1
 // ============================================================
 interface Dragon {
   active: boolean;
-  x: number; y: number;
+  x: number;
+  y: number;
   vx: number;
   flapPhase: number;
   dir: 1 | -1;
   cooldown: number; // frames until next spawn
 }
 
-let dragon: Dragon | null = null;
+let dragon: Dragon | null = hotCache.dragon;
+
+const DRAGON_FORCE = typeof window !== 'undefined' && window.location.search.includes('dragon=1');
 
 function ensureDragon(W: number, H: number, seed: number): void {
   if (dragon) return;
   const r = mulberry32(seed + 9001);
   dragon = {
-    active: false,
-    x: -300, y: H * 0.18,
-    vx: 1.6, flapPhase: 0,
+    active: DRAGON_FORCE,
+    x: DRAGON_FORCE ? -200 : -300,
+    y: H * 0.18,
+    vx: 1.6,
+    flapPhase: 0,
     dir: 1,
-    cooldown: Math.floor(r() * 600 + 600),
+    cooldown: DRAGON_FORCE ? 0 : Math.floor(r() * 600 + 600),
   };
+  hotCache.dragon = dragon;
   void W;
 }
 
@@ -187,6 +211,75 @@ function drawDragonBody(p: p5, x: number, y: number, dir: 1 | -1, phase: number)
 }
 
 // ============================================================
+// Gulls — small day-mode bird silhouettes
+// ============================================================
+interface Gull {
+  x: number;
+  y: number;
+  vx: number;
+  size: number;
+  flapPhase: number;
+  flapSpeed: number;
+  bobPhase: number;
+  yBase: number;
+  yAmp: number;
+  dir: 1 | -1;
+}
+
+let gulls: Gull[] | null = hotCache.gulls;
+
+function initGulls(W: number, H: number, seed: number): void {
+  const r = mulberry32(seed + 4242);
+  gulls = [];
+  for (let i = 0; i < 6; i++) {
+    gulls.push({
+      x: r() * W,
+      y: 0,
+      vx: 0.5 + r() * 1.0,
+      size: 14 + r() * 14,
+      flapPhase: r() * Math.PI * 2,
+      flapSpeed: 0.06 + r() * 0.08,
+      bobPhase: r() * Math.PI * 2,
+      yBase: 50 + r() * (H * 0.32),
+      yAmp: 6 + r() * 14,
+      dir: r() < 0.5 ? 1 : -1,
+    });
+  }
+  hotCache.gulls = gulls;
+}
+
+function drawGulls(p: p5, W: number, frame: number): void {
+  if (!gulls) return;
+  for (const g of gulls) {
+    g.x += g.vx * g.dir;
+    if (g.dir > 0 && g.x > W + 40) g.x = -40;
+    if (g.dir < 0 && g.x < -40) g.x = W + 40;
+    g.y = g.yBase + Math.sin(frame * 0.03 + g.bobPhase) * g.yAmp;
+    const flap = Math.sin(frame * g.flapSpeed + g.flapPhase);
+    drawGull(p, g.x, g.y, g.size, flap, g.dir);
+  }
+}
+
+function drawGull(p: p5, x: number, y: number, size: number, flap: number, dir: 1 | -1): void {
+  // Classic "M" gull silhouette — two arched wings, tiny body in middle.
+  p.push();
+  p.translate(x, y);
+  p.scale(dir, 1);
+  p.noStroke();
+  p.fill(20, 20, 28, 200);
+  const s = size / 24;
+  const arch = (1 - Math.abs(flap)) * 6 * s + 2 * s;
+  p.beginShape();
+  p.vertex(-22 * s, 0);
+  p.bezierVertex(-14 * s, -arch * 1.6, -6 * s, -arch * 0.8, 0, 0);
+  p.bezierVertex(6 * s, -arch * 0.8, 14 * s, -arch * 1.6, 22 * s, 0);
+  p.bezierVertex(14 * s, -arch * 0.4, 6 * s, -arch * 0.2, 0, arch * 0.2);
+  p.bezierVertex(-6 * s, -arch * 0.2, -14 * s, -arch * 0.4, -22 * s, 0);
+  p.endShape(p.CLOSE);
+  p.pop();
+}
+
+// ============================================================
 // Backdrop
 // ============================================================
 function drawBackdrop(p: p5, W: number, H: number, mode: DayNight): void {
@@ -199,13 +292,17 @@ function drawBackdrop(p: p5, W: number, H: number, mode: DayNight): void {
     }
     p.noStroke();
     // moon
-    p.fill(255, 240, 210, 30); p.circle(W * 0.78, H * 0.22, 320);
-    p.fill(255, 240, 210, 60); p.circle(W * 0.78, H * 0.22, 200);
-    p.fill(255, 245, 215);     p.circle(W * 0.78, H * 0.22, 130);
+    p.fill(255, 240, 210, 30);
+    p.circle(W * 0.78, H * 0.22, 320);
+    p.fill(255, 240, 210, 60);
+    p.circle(W * 0.78, H * 0.22, 200);
+    p.fill(255, 245, 215);
+    p.circle(W * 0.78, H * 0.22, 130);
     // floor
     p.fill('#1d2230');
     p.rect(0, H * 0.78, W, H * 0.22);
-    p.stroke(0, 60); p.strokeWeight(1);
+    p.stroke(0, 60);
+    p.strokeWeight(1);
     for (let x = 0; x < W; x += 60) p.line(x, H * 0.78, x + 90, H);
     for (let y2 = H * 0.78; y2 < H; y2 += 22) p.line(0, y2, W, y2);
     p.noStroke();
@@ -219,9 +316,12 @@ function drawBackdrop(p: p5, W: number, H: number, mode: DayNight): void {
     }
     p.noStroke();
     // sun
-    p.fill(255, 240, 180, 30); p.circle(W * 0.78, H * 0.22, 320);
-    p.fill(255, 230, 150, 70); p.circle(W * 0.78, H * 0.22, 200);
-    p.fill(255, 235, 170);     p.circle(W * 0.78, H * 0.22, 130);
+    p.fill(255, 240, 180, 30);
+    p.circle(W * 0.78, H * 0.22, 320);
+    p.fill(255, 230, 150, 70);
+    p.circle(W * 0.78, H * 0.22, 200);
+    p.fill(255, 235, 170);
+    p.circle(W * 0.78, H * 0.22, 130);
     // distant hills
     p.fill('#4a7a4a');
     p.beginShape();
@@ -236,7 +336,8 @@ function drawBackdrop(p: p5, W: number, H: number, mode: DayNight): void {
     // grass floor
     p.fill('#5a8a3a');
     p.rect(0, H * 0.78, W, H * 0.22);
-    p.stroke(58, 106, 26, 60); p.strokeWeight(1);
+    p.stroke(58, 106, 26, 60);
+    p.strokeWeight(1);
     for (let x = 0; x < W; x += 8) {
       const h = 4 + (x % 13);
       p.line(x, H * 0.78, x + 1, H * 0.78 - h);
@@ -256,29 +357,53 @@ function drawVignette(p: p5, W: number, H: number): void {
 
 function drawShadow(p: p5): void {
   p.noStroke();
-  p.fill(0, 90); p.ellipse(0, 165, 240, 36);
-  p.fill(0, 50); p.ellipse(0, 165, 320, 50);
+  p.fill(0, 90);
+  p.ellipse(0, 165, 240, 36);
+  p.fill(0, 50);
+  p.ellipse(0, 165, 320, 50);
+}
+
+function drawCrystalGlow(p: p5, W: number, H: number): void {
+  // Soft cyan halo around mage staff. Only when mage on the right.
+  const cx = W / 2 + 230;
+  const cy = H / 2 - 90;
+  p.noStroke();
+  for (let r = 360; r > 40; r -= 40) {
+    p.fill(127, 227, 255, 8);
+    p.circle(cx, cy, r);
+  }
+  void H;
 }
 
 // ============================================================
 // Public scene API
 // ============================================================
-export function reseedBats(W: number, H: number, seed: number): void {
+export function reseedFlocks(W: number, H: number, seed: number): void {
   initBats(W, H, seed);
+  initGulls(W, H, seed);
 }
 
 export function drawScene(p: p5, opts: SceneOpts): void {
   const { W, H, seed, frame, leftId, rightId, mode } = opts;
   if (!bats) initBats(W, H, seed);
+  if (!gulls) initGulls(W, H, seed);
   ensureDragon(W, H, seed);
 
   drawBackdrop(p, W, H, mode);
 
-  // dragon behind bats (further away)
-  drawDragon(p, W, H, frame);
-  drawBats(p, W, frame);
+  if (mode === 'night') {
+    // Dragon + bats only at night.
+    drawDragon(p, W, H, frame);
+    drawBats(p, W, frame);
+  } else {
+    drawGulls(p, W, frame);
+  }
 
-  // characters
+  // Mage staff glow — restored from original scene.
+  if (rightId === 'mage' || leftId === 'mage') {
+    drawCrystalGlow(p, W, H);
+  }
+
   const left = findCharacter(leftId);
   const right = findCharacter(rightId);
 
