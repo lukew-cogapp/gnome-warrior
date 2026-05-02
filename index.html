@@ -2,18 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Grimble & Elara — Adventurers</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Adventurers — Pick Your Party</title>
 <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
 <main>
-  <h1>Grimble &amp; Elara — Gnome Warrior &amp; Mage</h1>
+  <header>
+    <h1>Pick Your Party</h1>
+    <button id="modeBtn" type="button" class="mode-btn">☾ Night</button>
+  </header>
   <div id="sketch"></div>
+  <div class="selectors">
+    <div class="slot">
+      <button id="leftPrev" type="button" aria-label="Previous left character">◀</button>
+      <span id="leftName" class="slot-name">Gnome Warrior</span>
+      <button id="leftNext" type="button" aria-label="Next left character">▶</button>
+    </div>
+    <div class="slot">
+      <button id="rightPrev" type="button" aria-label="Previous right character">◀</button>
+      <span id="rightName" class="slot-name">Mage</span>
+      <button id="rightNext" type="button" aria-label="Next right character">▶</button>
+    </div>
+  </div>
   <div class="row">
-    <button id="reroll">Reroll Pose</button>
-    <button id="save">Save PNG</button>
+    <button id="reroll" type="button">Reroll Pose</button>
+    <button id="save" type="button">Save PNG</button>
   </div>
 </main>
-<script type="module" src="/src/main.js"></script>
+<script type="module" src="/src/main.ts"></script>
 </body>
 </html>
